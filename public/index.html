@@ -15,22 +15,44 @@
 
   <script>
     async function submitAnswer() {
-      const answer = document.getElementById("answer").value;
+  const answer = document.getElementById("answer").value;
 
-      const response = await fetch("/validate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answer })
-      });
+  try {
+    const response = await fetch("/validate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ answer, questionIndex: currentIndex })
+    });
 
-      const data = await response.json();
-
-      document.getElementById("result").innerText =
-        data.isCorrect ? "✅ Correct" : "❌ Incorrect";
-
-      document.getElementById("feedback").innerText =
-        `Confidence: ${data.confidence}\n${data.feedback}`;
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      data = { isCorrect: false, confidence: 0, feedback: "Invalid JSON from server" };
     }
+
+    document.getElementById("result").innerText =
+      data.isCorrect ? "✅ Correct" : "❌ Incorrect";
+
+    document.getElementById("feedback").innerText =
+      `Confidence: ${data.confidence}\n${data.feedback}`;
+
+    // Next question
+    currentIndex++;
+    if (currentIndex < QUESTIONS.length) {
+      document.getElementById("question").innerText = QUESTIONS[currentIndex];
+      document.getElementById("answer").value = "";
+    } else {
+      document.getElementById("quiz").innerHTML = "<h2>Quiz Complete!</h2>";
+    }
+
+  } catch (err) {
+    console.error("Fetch failed:", err);
+    alert("Server error. Please try again later.");
+  }
+}
+
   </script>
 </body>
 </html>
+
