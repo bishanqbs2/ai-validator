@@ -2,59 +2,73 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>AI Answer Validator</title>
+  <title>AI Quiz Validator</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    input { padding: 5px; margin-right: 10px; }
+    button { padding: 5px 10px; }
+  </style>
 </head>
 <body>
-  <h1>AI Answer Validator</h1>
-
-  <p>Question: What is the capital of France?</p>
-  <input id="answer" placeholder="Type your answer" />
-  <button onclick="submitAnswer()">Submit</button>
-
+  <h1>AI Quiz Validator</h1>
+  <div id="quiz">
+    <p id="question"></p>
+    <input id="answer" placeholder="Type your answer" />
+    <button onclick="submitAnswer()">Submit</button>
+  </div>
   <h3 id="result"></h3>
   <p id="feedback"></p>
 
   <script>
+    const QUESTIONS = [
+      "What is the capital of France?",
+      "What is 5 + 7?",
+      "Who wrote 'Romeo and Juliet'?"
+    ];
+
+    let currentIndex = 0;
+    let score = 0;
+
+    document.getElementById("question").innerText = QUESTIONS[currentIndex];
+
     async function submitAnswer() {
-  const answer = document.getElementById("answer").value;
+      const answer = document.getElementById("answer").value.trim();
+      if (!answer) return alert("Please type an answer");
 
-  try {
-    const response = await fetch("/validate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ answer, questionIndex: currentIndex })
-    });
+      try {
+        const response = await fetch("/validate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ answer, questionIndex: currentIndex })
+        });
 
-    let data;
-    try {
-      data = await response.json();
-    } catch {
-      data = { isCorrect: false, confidence: 0, feedback: "Invalid JSON from server" };
+        let data;
+        try {
+          data = await response.json();
+        } catch {
+          data = { isCorrect: false, confidence: 0, feedback: "Invalid JSON from server" };
+        }
+
+        document.getElementById("result").innerText =
+          data.isCorrect ? "✅ Correct" : "❌ Incorrect";
+        document.getElementById("feedback").innerText =
+          `Confidence: ${data.confidence}\n${data.feedback}`;
+
+        if (data.isCorrect) score++;
+
+        currentIndex++;
+        if (currentIndex < QUESTIONS.length) {
+          document.getElementById("question").innerText = QUESTIONS[currentIndex];
+          document.getElementById("answer").value = "";
+        } else {
+          document.getElementById("quiz").innerHTML = `<h2>Quiz Complete!</h2><p>Your score: ${score} / ${QUESTIONS.length}</p>`;
+        }
+
+      } catch (err) {
+        console.error("Fetch failed:", err);
+        alert("Server error. Please try again later.");
+      }
     }
-
-    document.getElementById("result").innerText =
-      data.isCorrect ? "✅ Correct" : "❌ Incorrect";
-
-    document.getElementById("feedback").innerText =
-      `Confidence: ${data.confidence}\n${data.feedback}`;
-
-    // Next question
-    currentIndex++;
-    if (currentIndex < QUESTIONS.length) {
-      document.getElementById("question").innerText = QUESTIONS[currentIndex];
-      document.getElementById("answer").value = "";
-    } else {
-      document.getElementById("quiz").innerHTML = "<h2>Quiz Complete!</h2>";
-    }
-
-  } catch (err) {
-    console.error("Fetch failed:", err);
-    alert("Server error. Please try again later.");
-  }
-}
-
   </script>
 </body>
 </html>
-
-
