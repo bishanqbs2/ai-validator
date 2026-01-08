@@ -5,16 +5,14 @@ import path from "path";
 
 const app = express();
 app.use(express.json());
+app.use(cors()); // allow all origins
 
-// Enable CORS for all origins (can restrict later)
-app.use(cors());
-
-// Serve SPA frontend
+// Serve SPA from public/
 app.use(express.static(path.join(process.cwd(), "public")));
 
 // OpenAI setup
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY // MUST be set in Render
+  apiKey: process.env.OPENAI_API_KEY // set in Render env vars
 });
 
 // Quiz questions
@@ -24,7 +22,7 @@ const QUESTIONS = [
   { question: "Who wrote 'Romeo and Juliet'?", answer: "Shakespeare" }
 ];
 
-// API endpoint for validation
+// API endpoint for AI validation
 app.post("/validate", async (req, res) => {
   try {
     const { answer, questionIndex } = req.body;
@@ -34,15 +32,14 @@ app.post("/validate", async (req, res) => {
     }
 
     const q = QUESTIONS[questionIndex];
-    if (!q) {
-      return res.status(400).json({ error: "Invalid question index" });
-    }
+    if (!q) return res.status(400).json({ error: "Invalid question index" });
 
     const prompt = `
 You are an AI answer validation system.
 Question: "${q.question}"
 Expected answer: "${q.answer}"
 User answer: "${answer}"
+Check meaning, not exact wording.
 Reply ONLY in JSON:
 { "isCorrect": true|false, "confidence": 0-1, "feedback": "short explanation" }
 `;
@@ -56,12 +53,11 @@ Reply ONLY in JSON:
         temperature: 0
       });
 
-      // Safely parse AI output
       const content = response.choices[0].message.content;
       try {
         result = JSON.parse(content);
       } catch (err) {
-        console.warn("Invalid JSON from AI, returning fallback", content);
+        console.warn("AI returned invalid JSON:", content);
         result = { isCorrect: false, confidence: 0, feedback: content };
       }
 
@@ -78,10 +74,5 @@ Reply ONLY in JSON:
   }
 });
 
-
-// Start server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
