@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AI Answer Validator</title>
+</head>
+<body>
+  <h1>AI Answer Validator</h1>
+
+  <p>Question: What is the capital of France?</p>
+  <input id="answer" placeholder="Type your answer" />
+  <button onclick="submitAnswer()">Submit</button>
+
+  <h3 id="result"></h3>
+  <p id="feedback"></p>
+
+  <script>
+    async function submitAnswer() {
+      const answer = document.getElementById("answer").value;
+
+      const response = await fetch("/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answer })
+      });
+
+      const data = await response.json();
+
+      document.getElementById("result").innerText =
+        data.isCorrect ? "✅ Correct" : "❌ Incorrect";
+
+      document.getElementById("feedback").innerText =
+        `Confidence: ${data.confidence}\n${data.feedback}`;
+    }
+  </script>
+</body>
+</html>
