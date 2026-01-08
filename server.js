@@ -3,16 +3,14 @@ import OpenAI from "openai";
 import path from "path";
 import cors from "cors";
 
-// Allow all origins (for testing)
-app.use(cors());
-
-// OR: Allow only your frontend origin (more secure)
-app.use(cors({
-  origin: "https://your-frontend-domain.com"
-}));
-
 const app = express();
 app.use(express.json());
+app.use(cors()); // Allow all origins (for testing)
+
+// OR: Allow only your frontend origin (more secure)
+// app.use(cors({
+//   origin: "https://your-frontend-domain.com"
+// }));
 
 // Serve SPA frontend
 app.use(express.static(path.join(process.cwd(), "public")));
@@ -77,4 +75,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-
